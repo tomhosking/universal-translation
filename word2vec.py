@@ -21,7 +21,7 @@ _snlp_book_dir = "../../../../../"
 sys.path.append(_snlp_book_dir)
 # docker image contains tensorflow 0.10.0rc0. We will support execution of only that version!
 # import statnlpbook.nn as nn
-import nn
+import nn,re
 
 
 #! SETUP 2 - DO NOT CHANGE, MOVE NOR COPY
@@ -29,6 +29,9 @@ data_path = "./data/"
 data_train = nn.load_corpus(data_path + "train.tsv")
 data_dev = nn.load_corpus(data_path + "dev.tsv")
 assert(len(data_train) == 45502)
+
+for story in data_train:
+    story['story'] = [re.sub('[^a-z0-9\s]+','',sent.lower()) for sent in story['story']]
 
 vocabulary = []
 for story in data_train:
@@ -38,7 +41,7 @@ for story in data_train:
 print('Data size', len(vocabulary))
 
 # Step 2: Build the dictionary and replace rare words with UNK token.
-vocabulary_size = 10000
+vocabulary_size = 5000
 
 
 def build_dataset(words, n_words):
@@ -68,8 +71,8 @@ def build_dataset(words, n_words):
 data, count, dictionary, reverse_dictionary = build_dataset(vocabulary,
                                                             vocabulary_size)
 del vocabulary  # Hint to reduce memory.
-# print('Most common words (+UNK)', count[:5])
-# print('Sample data', data[:10], [reverse_dictionary[i] for i in data[:10]])
+print('Most common words (+UNK)', count[:5])
+print('Sample data', data[:10], [reverse_dictionary[i] for i in data[:10]])
 
 data_index = 0
 
@@ -111,7 +114,7 @@ batch, labels = generate_batch(batch_size=8, num_skips=2, skip_window=1)
 # Step 4: Build and train a skip-gram model.
 
 batch_size = 100
-embedding_size = 50  # Dimension of the embedding vector.
+embedding_size = 20  # Dimension of the embedding vector.
 skip_window = 1       # How many words to consider left and right.
 num_skips = 2         # How many times to reuse an input to generate a label.
 num_sampled = 64      # Number of negative examples to sample.
@@ -177,7 +180,8 @@ with graph.as_default():
 # Step 5: Begin training.
 num_steps = 500001
 
-for attempt in range(2):
+for attempt in range(1,2):
+    data_index=0
     with tf.Session(graph=graph) as session:
       # We must initialize all variables before we use them.
       init.run()
